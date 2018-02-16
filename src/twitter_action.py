@@ -427,7 +427,7 @@ if __name__ == '__main__':
     print(ta._api)
 
     # list of search tokens
-    wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not']
+    wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not','#oops','#shithappens']
 
     # twitter stream api
     # while (True):
