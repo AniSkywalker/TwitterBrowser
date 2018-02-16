@@ -344,16 +344,20 @@ class AnyStreamListener(tweepy.StreamListener):
         return False
 
     def on_status(self, status):
+        #tweet text
         text = status.text
 
         # handling truncated status
         if (status.truncated):
             text = status.extended_tweet['full_text']
 
+        # converting text into one line
         text = convert_one_line(text)
 
-        if (status.in_reply_to_screen_name != None and self.criteria_check(text, 10, 1)):
+        print(text)
 
+        # minimum 10 words and 0 hashtags
+        if (status.in_reply_to_screen_name != None and self.criteria_check(text, 10, 1)):
             # getting author psychological dimensions
             self.awc.crawl_by_twitter_handle(status.user.screen_name)
             author_psychological_dimensions = self.awc.get_dimensions_as_string()
@@ -375,7 +379,8 @@ class AnyStreamListener(tweepy.StreamListener):
             except:
                 pass
 
-            time.sleep(1)
+        #sleep for 1 sec
+        time.sleep(1)
 
     def on_error(self, status_code):
         print(status_code)
