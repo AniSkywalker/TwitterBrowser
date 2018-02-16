@@ -309,72 +309,7 @@ def convert_one_line(text):
     return ' '.join([t.strip() for t in token])
 
 
-class SarcasmStreamListener(tweepy.StreamListener):
-    awc = analyze_word_crawler()
-
-    def __init__(self, ta):
-        self.ta = ta
-
-    def criteria_check(self, text, min_words=10, min_hashtags=0):
-        if (text.startswith('RT')):
-            return False
-
-        tokens = text.split(' ')
-
-        profile = 0
-        hash_tag = 0
-        links = 0
-        words = 0
-
-        for token in tokens:
-            if (token.startswith('@')):
-                profile = profile + 1
-                continue
-            if (token.startswith('#')):
-                hash_tag = hash_tag + 1
-                continue
-            if (token.startswith('http')):
-                links = links + 1
-                continue
-
-            words = words + 1
-
-        if (words >= min_words and hash_tag >= min_hashtags):
-            return True
-
-        return False
-
-    def on_status(self, status):
-        text = status.text
-        if (status.truncated):
-            text = status.extended_tweet['full_text']
-
-        if (text.startswith('@')):
-            text = convert_one_line(text)
-            if (self.criteria_check(text, 10, 1)):
-                print(text)
-                fw = open('../resource/crawl/sarcasm_v2.txt', 'a')
-                self.awc.crawl_by_twitter_handle(status.user.screen_name)
-
-                context = self.ta.get_status_text(status.in_reply_to_status_id_str)
-
-                if (context != None):
-                    fw.write(
-                        'TrainSen' + '\t' + '1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + convert_one_line(
-                            context) + '\t' + str(status.user.id) + '\n')
-                else:
-                    fw.write(
-                        'TrainSen' + '\t' + '1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + str(
-                            status.in_reply_to_status_id_str) + '\t' + str(status.user.id) + '\n')
-
-                fw.close()
-                time.sleep(2)
-
-    def on_error(self, status_code):
-        print(status_code)
-        return True
-
-
+# customstreamlistener to collect
 class AnyStreamListener(tweepy.StreamListener):
     def __init__(self, ta):
         super().__init__()
@@ -421,15 +356,16 @@ class AnyStreamListener(tweepy.StreamListener):
 
         if (status.in_reply_to_screen_name != None and self.criteria_check(text, 10, 1)):
 
-            # print(status)
+            # getting author psychological dimensions
             self.awc.crawl_by_twitter_handle(status.user.screen_name)
             author_psychological_dimensions = self.awc.get_dimensions_as_string()
 
+            # getting target psychological dimensions
             self.awc.crawl_by_twitter_handle(status.in_reply_to_screen_name)
             target_psychological_dimensions = self.awc.get_dimensions_as_string()
 
             try:
-                fw = open('../resource/crawl/other1.txt', 'a')
+                fw = open('../resource/crawl/crawl_dataset.txt', 'a')
                 fw.write('TrainSen'
                          + '\t' + '-1'
                          + '\t' + text
@@ -442,31 +378,6 @@ class AnyStreamListener(tweepy.StreamListener):
                 pass
 
             time.sleep(1)
-
-    def on_error(self, status_code):
-        print(status_code)
-        return True
-
-
-class CustomStreamListener(tweepy.StreamListener):
-    filters = []
-
-    def read_filters(self, filename):
-        f = open(filename, 'r')
-        lines = f.readlines()
-        self.filters = [line.strip().split('\t')[0] for line in lines]
-        f.close()
-
-    def on_status(self, status):
-        text = convert_one_line(status.text)
-        for f in self.filters:
-            m = re.search(' as ' + f + ' as (.+?)$', text)
-            if (m):
-                fw = open('../resource/crawl/simile1.txt', 'a')
-                fw.write(text.strip() + '\n')
-                fw.close()
-                print(text)
-                break
 
     def on_error(self, status_code):
         print(status_code)
@@ -516,7 +427,7 @@ if __name__ == '__main__':
     print(ta._api)
 
     # list of search tokens
-    wordlist = ['a']
+    wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not']
 
     # twitter stream api
     # while (True):
