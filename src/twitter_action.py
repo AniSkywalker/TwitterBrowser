@@ -1,8 +1,8 @@
 # offensivemagnet twitter account
 import os
-import os.path
 import sys
-sys.path.append('../../')
+
+sys.path.append('../')
 from collections import defaultdict
 import time
 import tweepy
@@ -10,7 +10,7 @@ import codecs
 import re
 
 from tweepy.error import TweepError
-from twitter_browser.AWC_browser.awc_browser import analyze_word_crawler
+from src.analyze_word_browser.awc_browser import analyze_word_crawler
 
 reply_file = '/root/PycharmProjects/Projects/twitter_browser/reply_file.txt'
 alltweets = []
@@ -18,26 +18,37 @@ alltweets = []
 
 class twitter_api():
     _api = None
-    _auth = None
+    _stream_api = None
+    _auth = []
 
-    # arghyaonline
-    consumer_key = '99cnAj3A72xzGc44D4vbRjTmz'
-    consumer_secret = 'tbXVZ3G2RL8JriHHrZ6Kb1qh5oE0TUFD5iVAKEiuIha4V8BuqG'
-    access_token = '137083783-elwiZBwneilwyEZ5aazdTzfsWGQ1ObNhNUJ3oSt5'
-    access_token_secret = 'mDpFCA4IZb0bg690pmsHFKqTiSRLQItD3iQo7sLnhgsWy'
+    consumer_key = []
+    consumer_secret = []
+    access_token = []
+    access_token_secret = []
 
-    # onlinesarcasm
-    # consumer_key = 'Z2nA5ErvUwTqCKfuKsYLSG9dV'
-    # consumer_secret = 'YUL8mJrch9tZpMsOxfSuJGzxDep3xhvNWFroW7BOEP7qZwp6Ts'
-    # access_token = '2807844465-EAirY93y3PL6JvcIZOhK7hf3zCgpI836YdNvtIB'
-    # access_token_secret = 'PBCdaRWiyJIrwke3DBFnMUYcXuK9AsimW8YidL5ZnJD7B'
-
-    def __init__(self):
+    def __init__(self, filepath):
+        self.load_authentication_keys(filepath)
         self.__authenticate()
 
+    def load_authentication_keys(self, filepath):
+        with open(filepath, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if (not line.startswith('#')):
+                    tokens = line.strip().split('\t')
+                    self.consumer_key.append(tokens[0])
+                    self.consumer_secret.append(tokens[1])
+                    self.access_token.append(tokens[2])
+                    self.access_token_secret.append(tokens[3])
+
     def __authenticate(self):
-        self._auth = tweepy.OAuthHandler(self.consumer_key, self.consumer_secret)
-        self._auth.set_access_token(self.access_token, self.access_token_secret)
+        for key_index in range(0, len(self.consumer_key)):
+            try:
+                auth = tweepy.OAuthHandler(self.consumer_key[key_index], self.consumer_secret[key_index])
+                auth.set_access_token(self.access_token[key_index], self.access_token_secret[key_index])
+                self._auth.append(auth)
+            except:
+                print('Could not authenticate using key index ' + key_index)
 
     def get_user_timeline(self, username):
         return self._api.user_timeline(username, count=100)
@@ -301,7 +312,7 @@ def convert_one_line(text):
 class SarcasmStreamListener(tweepy.StreamListener):
     awc = analyze_word_crawler()
 
-    def __init__(self,ta):
+    def __init__(self, ta):
         self.ta = ta
 
     def criteria_check(self, text, min_words=10, min_hashtags=0):
@@ -347,9 +358,10 @@ class SarcasmStreamListener(tweepy.StreamListener):
 
                 context = self.ta.get_status_text(status.in_reply_to_status_id_str)
 
-                if(context!=None):
+                if (context != None):
                     fw.write(
-                        'TrainSen' + '\t' + '1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + convert_one_line(context) + '\t' + str(status.user.id) + '\n')
+                        'TrainSen' + '\t' + '1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + convert_one_line(
+                            context) + '\t' + str(status.user.id) + '\n')
                 else:
                     fw.write(
                         'TrainSen' + '\t' + '1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + str(
@@ -362,11 +374,15 @@ class SarcasmStreamListener(tweepy.StreamListener):
         print(status_code)
         return True
 
+
 class AnyStreamListener(tweepy.StreamListener):
-    awc = analyze_word_crawler()
+    def __init__(self, ta):
+        super().__init__()
+        self.awc = analyze_word_crawler()
+        self.ta = ta
 
     def criteria_check(self, text, min_words=10, min_hashtags=0):
-        if(text.startswith('RT')):
+        if (text.startswith('RT')):
             return False
 
         tokens = text.split(' ')
@@ -396,26 +412,36 @@ class AnyStreamListener(tweepy.StreamListener):
 
     def on_status(self, status):
         text = status.text
+
+        # handling truncated status
         if (status.truncated):
             text = status.extended_tweet['full_text']
 
-        # if (text.startswith('@')):
         text = convert_one_line(text)
-        if (self.criteria_check(text, 10, 1)):
+
+        if (status.in_reply_to_screen_name != None and self.criteria_check(text, 10, 1)):
+
+            # print(status)
+            self.awc.crawl_by_twitter_handle(status.user.screen_name)
+            author_psychological_dimensions = self.awc.get_dimensions_as_string()
+
+            self.awc.crawl_by_twitter_handle(status.in_reply_to_screen_name)
+            target_psychological_dimensions = self.awc.get_dimensions_as_string()
 
             try:
-                # self.awc.crawl_by_twitter_handle(status.user.screen_name)
-                print(text)
                 fw = open('../resource/crawl/other1.txt', 'a')
-                fw.write(
-                    'TrainSen' + '\t' + '-1' + '\t' + text + '\n')
-                # fw.write(
-                #     'TrainSen' + '\t' + '-1' + '\t' + text + '\t' + self.awc.get_dimensions_as_string() + '\t' + str(
-                #         status.in_reply_to_status_id_str) + '\t' + str(status.user.id) + '\n')
+                fw.write('TrainSen'
+                         + '\t' + '-1'
+                         + '\t' + text
+                         + '\t' + author_psychological_dimensions
+                         + '\t' + convert_one_line(self.ta.get_status_text(status.in_reply_to_status_id_str))
+                         + '\t' + str(status.user.id)
+                         + '\t' + target_psychological_dimensions + '\n')
                 fw.close()
             except:
                 pass
-            # time.sleep(5)
+
+            time.sleep(1)
 
     def on_error(self, status_code):
         print(status_code)
@@ -483,109 +509,110 @@ def get_relies(res):
 
 if __name__ == '__main__':
     basepath = os.getcwd()[:os.getcwd().rfind('/')]
-    ta = twitter_api()
+    ta = twitter_api('../resource/keys.txt')
 
     # twitter api
-    ta._api = tweepy.API(ta._auth, parser=tweepy.parsers.JSONParser())
+    ta._api = tweepy.API(ta._auth[0], parser=tweepy.parsers.JSONParser())
     print(ta._api)
 
-    # ta.crawl_by_file(basepath + '/resource/irony-sarcasm-ling2016/regular.csv',
-    #                  basepath + '/resource/irony-sarcasm-ling2016/regular_text.tsv')
-
-
-
-    # fw = open('../resource/crawl/irony.txt', 'a')
-    # tweets = ta.get_all_search_queries('#irony')
-    # for tweet in tweets:
-    #     # print(tweet)
-    #     if(tweet['truncated']!=True):
-    #         text = convert_one_line(tweet['text'])
-    #         if(criteria_check(text,min_words=5)):
-    #             fw.write('TrainSen' + '\t' + '1' + '\t' + text +'\n')
-    # fw.close()
-
-
-    # open word list
-    # wordlist = ['a']
-
-    # with open(basepath+'/resource/temp/xaa','r') as f:
-    #     lines = f.readlines()
-    #     wordlist.extend([line.strip().split('\t')[0] for line in lines])
-
+    # list of search tokens
+    wordlist = ['a']
 
     # twitter stream api
     # while (True):
-    # try:
-    #     aStreamListener = AnyStreamListener()
-    #     stream = tweepy.Stream(auth=ta._auth, parser=tweepy.parsers.JSONParser(), listener=aStreamListener)
-    #     stream.filter(track=wordlist, languages=['en'])
-    # except:
-    #     raise
-
-
-
-
-    # twitter stream api
-    while (True):
-        try:
-            sStreamListener = SarcasmStreamListener(ta)
-            stream = tweepy.Stream(auth=ta._auth, parser=tweepy.parsers.JSONParser(), listener=sStreamListener)
-            stream.filter(track=['#sarcasm','#sarcastic'], languages=['en'])
-        except:
-            pass
-
-    # print(ta._api)
-    # ta._api = tweepy.API(ta._auth)
-
-    # ta.crawl_by_file(basepath + '/resource/data/'+'NAACL_SRW_2016.tsv',
-    #                          basepath + '/resource/crawl_text/'+'NAACL_SRW_2016_text.tsv')
-    # ta.crawl_by_file_with_reply(basepath + '/resource/data/'+'NAACL_SRW_2016.tsv',
-    #                          basepath + '/resource/crawl_text_reply/'+'NAACL_SRW_2016_text_reply.tsv')
-
-
-    # ta.get_all_tweets('onlinesarcasm')
-    # ta.get_all_liked_shared_tweets('onlinesarcasm')
-
-    # search_results = ta.get_all_search_queries('"as useful as"',count=100)
-    #
-    # fw = open('../resource/crawl/useful_simile.txt','a')
-    # for s in search_results:
-    #     fw.write(convert_one_line(s['text']).strip()+'\n')
-    # fw.close()
+    try:
+        aStreamListener = AnyStreamListener(ta)
+        stream = tweepy.Stream(auth=ta._auth[1], parser=tweepy.parsers.JSONParser(), listener=aStreamListener)
+        stream.filter(track=wordlist, languages=['en'])
+    except:
+        raise
 
 
 
 
 
-    # get_relies(ta.get_all_search_queries('@onlinesarcasm'))
+
+        # ta.crawl_by_file(basepath + '/resource/irony-sarcasm-ling2016/regular.csv',
+        #                  basepath + '/resource/irony-sarcasm-ling2016/regular_text.tsv')
 
 
 
-    # crawl_by_file()
+        # fw = open('../resource/crawl/irony.txt', 'a')
+        # tweets = ta.get_all_search_queries('#irony')
+        # for tweet in tweets:
+        #     # print(tweet)
+        #     if(tweet['truncated']!=True):
+        #         text = convert_one_line(tweet['text'])
+        #         if(criteria_check(text,min_words=5)):
+        #             fw.write('TrainSen' + '\t' + '1' + '\t' + text +'\n')
+        # fw.close()
 
 
-    # list=set()
-    #
-    #
-    # list.update(str(x) for x in ta.get_friends_id(id='onlinesarcasm'))
-    # print(len(list),list)
 
 
-    # print(t['id_str'])
-    # twitter_account_list = []
-    # twitter_account_list.append(ta.api.me()['id'])
-    #
-    # i=0
 
-    # while(i<len(twitter_account_list)):
-    #     time.sleep(1)
-    #     id = twitter_account_list[i]
-    #     i+=1
-    #     screen_name = ta.get_user(id)['screen_name']
-    #     followers = ta.get_follower_ids(id)
-    #     print(screen_name,len(followers))
-    #     if(len(followers)>100):
-    #         print(screen_name, len(followers))
-    #     for fid in followers:
-    #         if(not twitter_account_list.__contains__(fid)):
-    #             twitter_account_list.append(fid)
+
+        # twitter stream api
+        # while (True):
+        #     try:
+        #         sStreamListener = SarcasmStreamListener(ta)
+        #         stream = tweepy.Stream(auth=ta._auth, parser=tweepy.parsers.JSONParser(), listener=sStreamListener)
+        #         stream.filter(track=['#sarcasm', '#sarcastic'], languages=['en'])
+        #     except:
+        #         pass
+
+        # print(ta._api)
+        # ta._api = tweepy.API(ta._auth)
+
+        # ta.crawl_by_file(basepath + '/resource/data/'+'NAACL_SRW_2016.tsv',
+        #                          basepath + '/resource/crawl_text/'+'NAACL_SRW_2016_text.tsv')
+        # ta.crawl_by_file_with_reply(basepath + '/resource/data/'+'NAACL_SRW_2016.tsv',
+        #                          basepath + '/resource/crawl_text_reply/'+'NAACL_SRW_2016_text_reply.tsv')
+
+
+        # ta.get_all_tweets('onlinesarcasm')
+        # ta.get_all_liked_shared_tweets('onlinesarcasm')
+
+        # search_results = ta.get_all_search_queries('"as useful as"',count=100)
+        #
+        # fw = open('../resource/crawl/useful_simile.txt','a')
+        # for s in search_results:
+        #     fw.write(convert_one_line(s['text']).strip()+'\n')
+        # fw.close()
+
+
+
+
+
+        # get_relies(ta.get_all_search_queries('@onlinesarcasm'))
+
+
+
+        # crawl_by_file()
+
+
+        # list=set()
+        #
+        #
+        # list.update(str(x) for x in ta.get_friends_id(id='onlinesarcasm'))
+        # print(len(list),list)
+
+
+        # print(t['id_str'])
+        # twitter_account_list = []
+        # twitter_account_list.append(ta.api.me()['id'])
+        #
+        # i=0
+
+        # while(i<len(twitter_account_list)):
+        #     time.sleep(1)
+        #     id = twitter_account_list[i]
+        #     i+=1
+        #     screen_name = ta.get_user(id)['screen_name']
+        #     followers = ta.get_follower_ids(id)
+        #     print(screen_name,len(followers))
+        #     if(len(followers)>100):
+        #         print(screen_name, len(followers))
+        #     for fid in followers:
+        #         if(not twitter_account_list.__contains__(fid)):
+        #             twitter_account_list.append(fid)

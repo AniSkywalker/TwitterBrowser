@@ -1,5 +1,4 @@
 from collections import defaultdict
-import datetime
 import re
 from bs4 import BeautifulSoup
 import urllib.request
@@ -15,11 +14,11 @@ class analyze_word_crawler:
     twitter_handle = None
 
     def __init__(self):
-        self.data = defaultdict()
         if (not os.path.exists(self.basepath + 'crawled/')):
             os.makedirs(self.basepath + 'crawled/')
 
     def crawl_by_twitter_handle(self, twitter_handle):
+        self.data = defaultdict()
         # fw = open(basepath+'crawled/' + twitter_handle +'-'+ str(datetime.datetime.now())+ '.txt', 'w')
         self.twitter_handle = twitter_handle
 
