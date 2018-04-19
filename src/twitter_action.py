@@ -373,7 +373,7 @@ class AnyStreamListener(tweepy.StreamListener):
                          + '\t' + text
                          + '\t' + author_psychological_dimensions
                          + '\t' + convert_one_line(self.ta.get_status_text(status.in_reply_to_status_id_str))
-                         + '\t' + str(status.user.id)
+                         + '\t' + str(status.id)
                          + '\t' + target_psychological_dimensions + '\n')
                 fw.close()
             except:
