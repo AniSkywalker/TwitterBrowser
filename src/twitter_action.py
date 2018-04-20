@@ -367,7 +367,8 @@ class AnyStreamListener(tweepy.StreamListener):
             target_psychological_dimensions = self.awc.get_dimensions_as_string()
 
             try:
-                fw = open('../resource/crawl/crawl_dataset.txt', 'a')
+                # fw = open('../resource/crawl/crawl_dataset.txt', 'a')
+                fw = open('/home/ani/Dropbox/crawl_dataset.txt', 'a')
                 fw.write('TrainSen'
                          + '\t' + '-1'
                          + '\t' + text
@@ -380,7 +381,7 @@ class AnyStreamListener(tweepy.StreamListener):
                 pass
 
         #sleep for 1 sec
-        time.sleep(1)
+            time.sleep(5)
 
     def on_error(self, status_code):
         print(status_code)
@@ -426,6 +427,8 @@ def get_relies(res):
 
 if __name__ == '__main__':
     basepath = os.getcwd()[:os.getcwd().rfind('/')]
+
+    # read the authentication keys - each line represents keys of a API
     ta = twitter_api('../resource/keys.txt')
 
     # twitter api
@@ -435,12 +438,14 @@ if __name__ == '__main__':
     # list of search tokens
     wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not', '#oops', '#shithappens']
 
+
     # twitter stream api
     while (True):
         try:
             aStreamListener = AnyStreamListener(ta)
             stream = tweepy.Stream(auth=ta._auth[1], parser=tweepy.parsers.JSONParser(), listener=aStreamListener)
-            stream.filter(track=wordlist, languages=['en'])
+            # stream.filter(track=wordlist, languages=['en'])
+            stream.filter(track=['a','e','i','o','u'],languages=['en'])
         except:
             pass
 
