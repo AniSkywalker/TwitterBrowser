@@ -199,7 +199,7 @@ class twitter_api():
         return self._api.search(q=query, count=200)
 
     def get_all_search_queries(self, query, count=100):
-        # initialize a list to hold all the tweepy Tweets
+        # initialize a list to hold all the search results
         alltweets = []
 
         # make initial request for most recent tweets (200 is the maximum allowed count)
@@ -447,12 +447,13 @@ if __name__ == '__main__':
     ta._api = tweepy.API(ta._auth[0], parser=tweepy.parsers.JSONParser())
     print(ta._api)
 
-    # list of search tokens
-    # wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not', '#oops', '#shithappens']
+    # for general streaming
+    wordlist = None
 
     #filename to retrieve wordlist to search
     wordlist_path = '../resource/wordlist.txt'
     wordlist = read_wordlist(wordlist_path)
+
 
     # file path to store
     crawl_path = '/home/ani/Dropbox/crawl_dataset.txt'
@@ -481,7 +482,8 @@ if __name__ == '__main__':
         #                  basepath + '/resource/irony-sarcasm-ling2016/regular_text.tsv')
 
 
-
+        # to search by keyword
+        # file to store the results
         # fw = open('../resource/crawl/irony.txt', 'a')
         # tweets = ta.get_all_search_queries('#irony')
         # for tweet in tweets:
