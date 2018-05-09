@@ -82,7 +82,7 @@ class twitter_api():
                 return e.message[0]['message']
             return None
 
-    def get_all_tweets(self, screen_name):
+    def get_all_tweets(self, screen_name, crawl_folder_path='/root/PycharmProjects/Projects/twitter_browser/crawl/'):
         # initialize a list to hold all the tweepy Tweets
         alltweets = []
 
@@ -118,7 +118,7 @@ class twitter_api():
                       convert_one_line(tweet['text']).encode("utf-8")] for tweet in alltweets]
 
         # write the csv
-        with open('/root/PycharmProjects/Projects/twitter_browser/crawl/' + '%s_tweets.csv' % screen_name, 'w') as f:
+        with open(crawl_folder_path + '%s_tweets.csv' % screen_name, 'w') as f:
             for outtweet in outtweets:
                 f.write(str(outtweet[0]) + '\t' + str(outtweet[1]) + '\t' + str(outtweet[2]) + '\t' + str(
                     outtweet[3].strip()) + '\n')
