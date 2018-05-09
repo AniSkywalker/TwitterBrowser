@@ -28,6 +28,7 @@ class twitter_api():
         self.load_authentication_keys(filepath)
         self.__authenticate()
 
+    # loads the authenticantion keys from the file where each line contains 4 keys in a tab separated format (consumer key, consumer_secret, accesstoken, access token secret)
     def load_authentication_keys(self, filepath):
         with open(filepath, 'r') as f:
             lines = f.readlines()
@@ -39,6 +40,7 @@ class twitter_api():
                     self.access_token.append(tokens[2])
                     self.access_token_secret.append(tokens[3])
 
+    # authenticates multiple accounts (depending on number of the keys)
     def __authenticate(self):
         for key_index in range(0, len(self.consumer_key)):
             try:
@@ -49,8 +51,8 @@ class twitter_api():
                 print('Could not authenticate using key index ' + key_index)
                 raise
 
-    def get_user_timeline(self, username):
-        return self._api.user_timeline(username, count=100)
+    def get_user_timeline(self, username, tweet_count=100):
+        return self._api.user_timeline(username, count=tweet_count)
 
     def get_exists_user(self, username):
         try:
@@ -62,8 +64,7 @@ class twitter_api():
         try:
             return self._api.followers_ids(id)['ids']
         except(TweepError):
-            self.__authenticate()
-            return []
+            return None
 
     def get_user(self, id=''):
         return self._api.get_user(id)
@@ -125,7 +126,8 @@ class twitter_api():
 
         pass
 
-    def get_all_liked_shared_tweets(self, screen_name, crawl_folder_path='/root/PycharmProjects/Projects/twitter_browser/crawl/'):
+    def get_all_liked_shared_tweets(self, screen_name,
+                                    crawl_folder_path='/root/PycharmProjects/Projects/twitter_browser/crawl/'):
         # initialize a list to hold all the tweepy Tweets
         # alltweets = []
 
