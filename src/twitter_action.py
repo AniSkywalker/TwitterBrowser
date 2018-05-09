@@ -441,7 +441,8 @@ if __name__ == '__main__':
 
     # read the authentication keys - each line represents keys of a API
     # replace the keys with your own
-    ta = twitter_api('../resource/keys.txt')
+    keys_path = '../resource/keys.txt'
+    ta = twitter_api(keys_path)
 
     # twitter api
     ta._api = tweepy.API(ta._auth[0], parser=tweepy.parsers.JSONParser())
