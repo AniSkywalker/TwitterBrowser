@@ -429,6 +429,13 @@ def get_relies(res):
             fw.write(str(value) + '\t' + key + '\n')
 
 
+def read_wordlist(filepath):
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
+        return [line.strip() for line in lines]
+    return None
+
+
 if __name__ == '__main__':
     basepath = os.getcwd()[:os.getcwd().rfind('/')]
 
@@ -441,7 +448,11 @@ if __name__ == '__main__':
     print(ta._api)
 
     # list of search tokens
-    wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not', '#oops', '#shithappens']
+    # wordlist = ['#sarcasm', '#sarcastic', '#irony', '#yeahright', '#not', '#oops', '#shithappens']
+
+    #filename to retrieve wordlist to search
+    wordlist_path = '../resource/wordlist.txt'
+    wordlist = read_wordlist(wordlist_path)
 
     # file path to store
     crawl_path = '/home/ani/Dropbox/crawl_dataset.txt'
@@ -452,11 +463,12 @@ if __name__ == '__main__':
         aStreamListener = AnyStreamListener(ta, crawl_path)
         stream = tweepy.Stream(auth=ta._auth[1], parser=tweepy.parsers.JSONParser(), listener=aStreamListener)
 
-        # uncomment for tracking via above wordlist
-        # stream.filter(track=wordlist, languages=['en'])
-
-        # for general streaming
-        stream.filter(track=['a', 'e', 'i', 'o', 'u'], languages=['en'])
+        if(wordlist!=None):
+            # wordlist based streaming
+            stream.filter(track=wordlist, languages=['en'])
+        else:
+            # for general streaming
+            stream.filter(track=['a', 'e', 'i', 'o', 'u'], languages=['en'])
     except:
         pass
 
