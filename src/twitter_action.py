@@ -125,7 +125,7 @@ class twitter_api():
 
         pass
 
-    def get_all_liked_shared_tweets(self, screen_name):
+    def get_all_liked_shared_tweets(self, screen_name, crawl_folder_path='/root/PycharmProjects/Projects/twitter_browser/crawl/'):
         # initialize a list to hold all the tweepy Tweets
         # alltweets = []
 
@@ -172,7 +172,7 @@ class twitter_api():
 
         list_of_tweets = defaultdict()
 
-        with open('/root/PycharmProjects/Projects/twitter_browser/crawl/' + '%s_tweets.csv' % screen_name, 'r') as f:
+        with open(crawl_folder_path + '%s_tweets.csv' % screen_name, 'r') as f:
             for line in f.readlines():
                 id, fav_count, rt_count, quoted = line.split('\t')
                 list_of_tweets[quoted] = [id, fav_count, rt_count]
@@ -187,7 +187,7 @@ class twitter_api():
             except:
                 pass
 
-        with open('/root/PycharmProjects/Projects/twitter_browser/crawl/' + '%s_tweets.csv' % screen_name, 'w') as f:
+        with open(crawl_folder_path + '%s_tweets.csv' % screen_name, 'w') as f:
             for key, value in list_of_tweets.items():
                 f.write(str(value[0]) + '\t' + str(value[1]) + '\t' + str(value[2]) + '\t' + key + '\n')
 
